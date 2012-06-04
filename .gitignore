@@ -1,0 +1,3 @@
+*.o
+runt
+example.cpp.test.cpp
