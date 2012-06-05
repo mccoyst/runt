@@ -93,6 +93,7 @@ var testfmt = `
 #include <array>
 #include <iostream>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -100,11 +101,15 @@ struct TestFailed{};
 
 class Testo{
 	friend int main(int, char*[]);
-	std::vector<std::string> msgs;
+	std::vector<std::tuple<std::string,int,std::string>> msgs;
+	int ntests;
+	std::string current;
+	Testo() : ntests(0){}
 public:
 	void Assert(bool b, std::string &&msg){
+		ntests++;
 		if(b) return;
-		msgs.push_back(move(msg));
+		msgs.push_back(make_tuple(current, ntests, move(msg)));
 		throw TestFailed{};
 	}
 };
@@ -113,23 +118,26 @@ typedef void (test)(Testo &);
 
 {{.Text}}
 
-std::array<test*, {{len .Tests}}> tests = {
+std::array<std::tuple<std::string, test*>, {{len .Tests}}> tests = { {
 {{range .Tests}}
-	{{.}},
+	make_tuple(std::string("{{.}}"), {{.}}),
 {{end}}
-};
+} };
 
 int main(int argc, char *argv[]){
 	Testo testo;
 	for(auto t : tests){
 		try{
-			t(testo);
+			testo.current = std::get<0>(t);
+			std::get<1>(t)(testo);
 		}catch(TestFailed tf){
 			// OK
 		}catch(const std::exception &e){
-			testo.msgs.push_back(std::string("Unexpected exception: ")+e.what());
+			std::cout << "Unexpected exception: " << e.what() << '\n';
+			return 1;
 		}catch(...){
-			testo.msgs.push_back("Unexpected, unknown exception");
+			std::cout << "Unexpected, unknown exception\n";
+			return 1;
 		}
 	}
 
@@ -138,9 +146,10 @@ int main(int argc, char *argv[]){
 		return 0;
 	}
 
-	std::cout << argv[0] << ": " << testo.msgs.size() << '/' << tests.size() << " tests failed:\n";
+	std::cout << argv[0] << ": " << testo.msgs.size() << '/' << testo.ntests << " tests failed:\n";
 	for(auto msg : testo.msgs)
-		std::cout << msg << '\n';
+		std::cout << std::get<0>(msg) << " #"
+			<< std::get<1>(msg) << ": \"" << std::get<2>(msg) << "\"\n";
 	return 1;
 }
 `
