@@ -5,21 +5,60 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"path/filepath"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"regexp"
+	"strings"
 	"text/template"
 )
 
+var cxx = flag.String("cxx", "clang++", "The C++ compiler/linker")
+var cxxflags = flag.String("cxxflags", "", "Space-separated flags for compilation")
+var ldflags = flag.String("ldflags", "", "Space-separated flags for linking")
+var testdir = flag.String("testdir", "test", "Location of test files.")
+
+var cmdline struct{
+	cxx string
+	cxxflags []string
+	ldflags []string
+	objects []string
+}
+
 func main() {
-	if len(os.Args) < 2 {
+	flag.Parse()
+	if len(flag.Args()) < 1 {
 		fmt.Fprintln(os.Stderr, "I need a test file.")
 		os.Exit(1)
 	}
 
-	code := readTests(os.Args[1])
+	cmdline.cxx = *cxx
+	cmdline.cxxflags = strings.Fields(*cxxflags)
+	cmdline.ldflags = strings.Fields(*ldflags)
+	cmdline.objects = flag.Args()
+
+	suites, err := filepath.Glob(*testdir + "/test_*.cpp")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to find tests: %v\n", err)
+		os.Exit(1)
+	}
+
+	failures := 0
+	for _, suit := range suites {
+		if err = runSuite(suit); err != nil {
+			fmt.Fprintf(os.Stderr, "Suite failed: %v\n", err)
+			failures++
+		}
+	}
+	os.Exit(failures)
+}
+
+func runSuite(name string) error {
+	code := readTests(name)
 	t := &Test{
 		string(code),
 		findTests(code),
@@ -27,18 +66,47 @@ func main() {
 
 	tmpl := template.Must(template.New("runt").Parse(testfmt))
 
-	testcpp, err := os.Create(os.Args[1] + ".test.cpp")
+	testout := name + "_runner.cpp"
+	testcpp, err := os.Create(testout)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Failed to create c++ file: %v.\n", err)
-		os.Exit(1)
+		return fmt.Errorf("Failed to create c++ file: %v.\n", err)
 	}
+	defer os.Remove(testout)
 	defer testcpp.Close()
 
 	err = tmpl.Execute(testcpp, t)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Failed to write testmain: %v.\n", err)
-		os.Exit(1)
+		return fmt.Errorf("Failed to write testmain: %v.\n", err)
 	}
+
+	fmt.Fprintln(os.Stdout, "Running", name)
+
+	args := make([]string, 0, len(cmdline.cxxflags) + 3 + len(cmdline.ldflags))
+	args = append(args, cmdline.cxxflags...)
+	args = append(args, "-o", "test_runner", testout)
+	for _, o := range cmdline.objects {
+		args = append(args, o)
+	}
+	args = append(args, cmdline.ldflags...)
+
+	cmd := exec.Command(cmdline.cxx, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("%v. Please fix that.", err)
+	}
+
+	cmd = exec.Command("./test_runner")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	defer os.Remove("test_runner")
+	if err != nil {
+		return fmt.Errorf("%v. Please fix that.", err)
+	}
+
+	return nil
 }
 
 func readTests(file string) []byte {
