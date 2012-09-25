@@ -20,7 +20,8 @@ import (
 var cxx = flag.String("cxx", "clang++", "The C++ compiler/linker")
 var cxxflags = flag.String("cxxflags", "", "Space-separated flags for compilation")
 var ldflags = flag.String("ldflags", "", "Space-separated flags for linking")
-var testdir = flag.String("testdir", "test", "Location of test files.")
+var testdir = flag.String("testdir", "test", "Location of test files")
+var verbose = flag.Bool("verbose", false, "Print commands to before running them")
 
 var cmdline struct{
 	cxx string
@@ -79,7 +80,7 @@ func runSuite(name string) error {
 		return fmt.Errorf("Failed to write testmain: %v.\n", err)
 	}
 
-	fmt.Fprintln(os.Stdout, "Running", name)
+	fmt.Println("Running", name)
 
 	args := make([]string, 0, len(cmdline.cxxflags) + 3 + len(cmdline.ldflags))
 	args = append(args, cmdline.cxxflags...)
@@ -89,12 +90,20 @@ func runSuite(name string) error {
 	}
 	args = append(args, cmdline.ldflags...)
 
+	if *verbose {
+		fmt.Println(cmdline.cxx, args)
+	}
+
 	cmd := exec.Command(cmdline.cxx, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("%v. Please fix that.", err)
+	}
+
+	if *verbose {
+		fmt.Println("./test_runner")
 	}
 
 	cmd = exec.Command("./test_runner")
