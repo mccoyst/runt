@@ -30,6 +30,10 @@ var cmdline struct{
 }
 
 func main() {
+	flag.Usage = func(){
+		fmt.Fprintf(os.Stderr, "Usage: %s [flags] [additional object files]\nFlags:\n", os.Args[0])
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	cmdline.cxx = *cxx
