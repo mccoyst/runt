@@ -21,6 +21,7 @@ var cxx = flag.String("cxx", "clang++", "The C++ compiler/linker")
 var cxxflags = flag.String("cxxflags", "", "Space-separated flags for compilation")
 var ldflags = flag.String("ldflags", "", "Space-separated flags for linking")
 var testdir = flag.String("testdir", "test", "Location of test files")
+var objdir = flag.String("objdir", "build", "Location of object files")
 var verbose = flag.Bool("verbose", false, "Print commands to before running them")
 
 var cmdline struct{
@@ -41,6 +42,11 @@ func main() {
 	cmdline.cxxflags = strings.Fields(*cxxflags)
 	cmdline.ldflags = strings.Fields(*ldflags)
 	cmdline.objects = flag.Args()
+
+	foundObjs, err := filepath.Glob(*objdir + "/*.o")
+	if err == nil {
+		cmdline.objects = append(cmdline.objects, foundObjs...)
+	}
 
 	suites, err := filepath.Glob(*testdir + "/test_*.cpp")
 	if err != nil {
