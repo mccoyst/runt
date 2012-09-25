@@ -23,4 +23,4 @@ code so that the main function is easily isolated and filtered out from the othe
 object files.
 
 Other than that bug, if you have a different project layout or other compilation needs,
-they can be specified with flags to runt. For more information, run `runt -h'.
+they can be specified with flags to runt. For more information, run `runt -h`.
