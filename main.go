@@ -31,10 +31,6 @@ var cmdline struct{
 
 func main() {
 	flag.Parse()
-	if len(flag.Args()) < 1 {
-		fmt.Fprintln(os.Stderr, "I need a test file.")
-		os.Exit(1)
-	}
 
 	cmdline.cxx = *cxx
 	cmdline.cxxflags = strings.Fields(*cxxflags)
