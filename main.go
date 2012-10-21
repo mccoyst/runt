@@ -5,13 +5,13 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"path/filepath"
 	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"text/template"
@@ -24,11 +24,11 @@ var testdir = flag.String("testdir", "test", "Location of test files")
 var objdir = flag.String("objdir", "build", "Location of object files")
 var verbose = flag.Bool("verbose", false, "Print commands to before running them")
 
-var cmdline struct{
-	cxx string
+var cmdline struct {
+	cxx      string
 	cxxflags []string
-	ldflags []string
-	objects []string
+	ldflags  []string
+	objects  []string
 }
 
 func main() {
@@ -88,7 +88,7 @@ func runSuite(name string) error {
 
 	fmt.Println("Running", name)
 
-	args := make([]string, 0, len(cmdline.cxxflags) + 3 + len(cmdline.ldflags))
+	args := make([]string, 0, len(cmdline.cxxflags)+3+len(cmdline.ldflags))
 	args = append(args, cmdline.cxxflags...)
 	args = append(args, "-o", "test_runner", testout)
 	for _, o := range cmdline.objects {
@@ -167,8 +167,8 @@ func findTests(code []byte) []string {
 	return tests
 }
 
-type Test struct{
-	Text string
+type Test struct {
+	Text  string
 	Tests []string
 }
 

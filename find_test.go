@@ -7,19 +7,19 @@ import (
 )
 
 func TestFindTests(t *testing.T) {
-	tests := []struct{
-		code string
+	tests := []struct {
+		code     string
 		expected []string
 	}{
-		{ "void test_frob", []string{ "test_frob" } },
-		{ "void test_frob(xyz)", []string{ "test_frob" } },
-		{ `
+		{"void test_frob", []string{"test_frob"}},
+		{"void test_frob(xyz)", []string{"test_frob"}},
+		{`
 void test_cat
 void test_dog
 int test_robot
 void test_hamster
 1 + 2 = 3
-void test_gopher`, []string{ "test_cat", "test_dog", "test_hamster", "test_gopher" } },
+void test_gopher`, []string{"test_cat", "test_dog", "test_hamster", "test_gopher"}},
 	}
 
 	for _, test := range tests {
