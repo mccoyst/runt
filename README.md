@@ -13,7 +13,7 @@ Here is an example project layout:
 			test_duck.cc
 			test_orange.cc
 
-Running the tests with runt may be as simple as:
+Test functions match this regex: `void (test_[[:word:]]+).*`. Running the tests with runt may be as simple as:
 
 	runt build/*.o
 
