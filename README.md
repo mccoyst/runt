@@ -13,7 +13,14 @@ Here is an example project layout:
 			test_duck.cc
 			test_orange.cc
 
-Test functions match this regex: `void (test_[[:word:]]+).*`. Running the tests with runt may be as simple as:
+Test functions match this regex: `void (test_[[:word:]]+).*` and take an object of type `Testo &`.
+This type has an Assert function for reporting tests to the test runner:
+
+	void Assert(bool b, std::string &&msg);
+
+If `b` is false, the test is considered a failure, and msg will be printed with the test results.
+
+Running the tests with runt may be as simple as:
 
 	runt build/*.o
 
